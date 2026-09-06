@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>烤肉之家 - 朋友點餐單</title>
+  <style>
+    :root {
+      --primary: #c0392b;
+      --primary-dark: #962d22;
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #2c3e50;
+      --accent: #e67e22;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding-bottom: 110px;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 20px 15px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    header p { font-size: 0.85rem; opacity: 0.9; }
+
+    .nav-tabs {
+      display: flex;
+      overflow-x: auto;
+      background: white;
+      padding: 10px 15px;
+      gap: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 70px;
+      z-index: 99;
+    }
+
+    .nav-tab {
+      flex: 0 0 auto;
+      padding: 6px 14px;
+      background: #edf2f7;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #4a5568;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 15px auto;
+      padding: 0 15px;
+    }
+
+    .category-title {
+      font-size: 1.1rem;
+      margin: 20px 0 10px;
+      color: var(--primary);
+      border-left: 4px solid var(--primary);
+      padding-left: 8px;
+    }
+
+    .menu-item {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .item-info .name { font-weight: 600; font-size: 1rem; color: #2d3748; }
+    .item-info .price { font-size: 0.9rem; color: #718096; margin-top: 2px; }
+
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-qty {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #edf2f7;
+      color: #2d3748;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+    }
+
+    .btn-qty:active { transform: scale(0.9); }
+    .btn-plus { background: var(--primary); color: white; }
+
+    .qty-display {
+      font-size: 1rem;
+      font-weight: 600;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    /* 底部固定結帳列 */
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .cart-summary .count { font-size: 0.85rem; color: #718096; }
+    .cart-summary .total { font-size: 1.3rem; font-weight: 800; color: var(--primary); }
+
+    .btn-submit {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3);
+    }
+
+    .btn-submit:active { background: var(--primary-dark); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔥 烤肉之家 線上點餐</h1>
+    <p>請選擇想吃的品項與數量</p>
+  </header>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="scrollToCat('cat-0')">肉類</div>
+    <div class="nav-tab" onclick="scrollToCat('cat-1')">肉串</div>
+    <div class="nav-tab" onclick="scrollToCat('cat-2')">其他</div>
+    <div class="nav-tab" onclick="scrollToCat('cat-3')">丸子</div>
+    <div class="nav-tab" onclick="scrollToCat('cat-4')">蔬菜</div>
+  </div>
+
+  <div class="container" id="menu-container"></div>
+
+  <div class="cart-bar">
+    <div class="cart-summary">
+      <div class="count">已選 <span id="total-count">0</span> 件</div>
+      <div class="total">合計 $ <span id="total-price">0</span></div>
+    </div>
+    <button class="btn-submit" onclick="copyOrder()">📋 複製點餐內容</button>
+  </div>
+
+  <script>
+    const menuData = [
+      {
+        category: "肉類",
+        items: [
+          { name: "雞脖子", price: 25 },
+          { name: "雞腿", price: 90 },
+          { name: "雞翅", price: 40 },
+          { name: "雞皮", price: 25 },
+          { name: "雞屁股", price: 35 },
+          { name: "雞心", price: 25 },
+          { name: "雞胗", price: 25 },
+          { name: "雞腳", price: 25 },
+          { name: "豬腸", price: 30 },
+          { name: "鴨翅", price: 30 }
+        ]
+      },
+      {
+        category: "肉串",
+        items: [
+          { name: "鳳梨肉串", price: 50 },
+          { name: "番茄肉串", price: 50 },
+          { name: "蔥肉串", price: 50 },
+          { name: "玉米筍肉串", price: 35 },
+          { name: "金針肉串", price: 50 },
+          { name: "豆肉串", price: 50 },
+          { name: "高麗菜肉串", price: 50 },
+          { name: "洋蔥肉串", price: 50 },
+          { name: "雞肉串", price: 50 },
+          { name: "牛肉串", price: 50 }
+        ]
+      },
+      {
+        category: "其他",
+        items: [
+          { name: "米血", price: 25 },
+          { name: "豆干", price: 20 },
+          { name: "芋條", price: 20 },
+          { name: "魚板", price: 30 },
+          { name: "白甜不辣(片)", price: 10 },
+          { name: "米腸", price: 25 },
+          { name: "百頁豆腐", price: 25 },
+          { name: "小熱狗", price: 15 }
+        ]
+      },
+      {
+        category: "丸子",
+        items: [
+          { name: "貢丸", price: 25 },
+          { name: "花枝丸", price: 25 },
+          { name: "脆丸", price: 25 },
+          { name: "小貢丸", price: 25 },
+          { name: "黑輪", price: 10 }
+        ]
+      },
+      {
+        category: "蔬菜",
+        items: [
+          { name: "青椒", price: 25 },
+          { name: "香菇", price: 25 },
+          { name: "茄子", price: 25 },
+          { name: "四季豆", price: 25 },
+          { name: "節瓜", price: 25 }
+        ]
+      }
+    ];
+
+    const cart = {};
+
+    function renderMenu() {
+      const container = document.getElementById('menu-container');
+      let html = '';
+
+      menuData.forEach((cat, cIdx) => {
+        html += `<div class="category-title" id="cat-${cIdx}">${cat.category}</div>`;
+        cat.items.forEach((item) => {
+          const key = item.name;
+          cart[key] = { price: item.price, qty: 0 };
+          html += `
+            <div class="menu-item">
+              <div class="item-info">
+                <div class="name">${item.name}</div>
+                <div class="price">$${item.price}</div>
+              </div>
+              <div class="counter">
+                <button class="btn-qty" onclick="updateQty('${key}', -1)">-</button>
+                <span class="qty-display" id="qty-${key}">0</span>
+                <button class="btn-qty btn-plus" onclick="updateQty('${key}', 1)">+</button>
+              </div>
+            </div>
+          `;
+        });
+      });
+
+      container.innerHTML = html;
+    }
+
+    function updateQty(key, delta) {
+      if (!cart[key]) return;
+      cart[key].qty = Math.max(0, cart[key].qty + delta);
+      document.getElementById(`qty-${key}`).innerText = cart[key].qty;
+      calculateTotal();
+    }
+
+    function calculateTotal() {
+      let totalCount = 0;
+      let totalPrice = 0;
+
+      for (const [key, item] of Object.entries(cart)) {
+        totalCount += item.qty;
+        totalPrice += item.qty * item.price;
+      }
+
+      document.getElementById('total-count').innerText = totalCount;
+      document.getElementById('total-price').innerText = totalPrice;
+    }
+
+    function copyOrder() {
+      let text = "🍢 【烤肉之家 點餐清單】\n-------------------\n";
+      let hasItem = false;
+      let totalPrice = 0;
+
+      for (const [key, item] of Object.entries(cart)) {
+        if (item.qty > 0) {
+          hasItem = true;
+          const subtotal = item.qty * item.price;
+          totalPrice += subtotal;
+          text += `• ${key} x ${item.qty} ($${subtotal})\n`;
+        }
+      }
+
+      if (!hasItem) {
+        alert("請先選擇要點的品項與數量喔！");
+        return;
+      }
+
+      text += `-------------------\n💰 總計金額：$${totalPrice} 元`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert("已成功複製點餐內容！您可以直接貼到 LINE 傳給我喔！");
+      }).catch(() => {
+        alert("複製失敗，請手動截圖給朋友～");
+      });
+    }
+
+    function scrollToCat(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        const yOffset = -120; 
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
